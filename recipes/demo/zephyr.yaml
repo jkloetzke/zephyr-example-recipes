@@ -1,0 +1,79 @@
+inherit: [make]
+
+checkoutSCM:
+    - scm: git
+      url: https://github.com/jkloetzke/zephyr-lpcxpresso54114-openamp.git
+      dir: zephyr-lpcxpresso54114-openamp
+    - scm: git
+      url: https://github.com/zephyrproject-rtos/zephyr
+      tag: zephyr-v2.0.0
+      dir: zephyr
+    - scm: git
+      url: https://github.com/zephyrproject-rtos/hal_nxp.git
+      commit: 97265a5396edc6a9de5f2fb643d505f37064e606
+      dir: modules/hal/nxp
+    - scm: git
+      url: https://github.com/zephyrproject-rtos/libmetal.git
+      commit: 45e630d6152824f807d3f919958605c4626cbdff
+      dir: modules/lib/libmetal
+    - scm: git
+      url: https://github.com/zephyrproject-rtos/open-amp.git
+      commit: 9b591b289e1f37339bd038b5a1f0e6c8ad39c63a
+      dir: modules/lib/open-amp
+
+buildTools: [target-toolchain]
+buildVars: [CROSS_COMPILE]
+buildScript: |
+    export ZEPHYR_BASE="$1/zephyr"
+    ZEPHYR_MODULES=
+    for i in $1/modules/*/* ; do
+        ZEPHYR_MODULES+="${ZEPHYR_MODULES:+;}$i"
+    done
+
+    buildZephyrApp()
+    {
+        cmake \
+            -DZEPHYR_TOOLCHAIN_VARIANT=cross-compile \
+            -DCROSS_COMPILE="${BOB_TOOL_PATHS[target-toolchain]}/$CROSS_COMPILE" \
+            -DZEPHYR_MODULES="$ZEPHYR_MODULES" \
+            "$@"
+        makeParallel
+    }
+
+multiPackage:
+    "":
+        root: True
+
+        depends:
+            # define host environment
+            -
+                name: devel::sandbox
+                use: [sandbox]
+                forward: True
+            -
+                name: devel::sandbox-toolchain
+                use: [environment, tools]
+                forward: True
+
+            # target toolchain
+            -
+                name: devel::cross-toolchain-arm-none-eabi
+                use: [environment, tools]
+                forward: True
+
+            # slave mcu
+            - demo::zephyr-remote
+
+        buildScript: |
+            buildZephyrApp $1/zephyr-lpcxpresso54114-openamp/main \
+                -DCONFIG_SLAVE_IMAGE_MCUX="\"${BOB_DEP_PATHS[demo::zephyr-remote]}/zephyr.bin\""
+        packageScript: |
+            cp $1/zephyr/zephyr.bin .
+
+    remote:
+        buildScript: |
+            buildZephyrApp $1/zephyr-lpcxpresso54114-openamp/remote
+
+        packageScript: |
+            cp $1/zephyr/zephyr.bin .
+
