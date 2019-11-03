@@ -17,10 +17,11 @@ Clone the recipes and build them with Bob:
 
     $ git clone https://github.com/jkloetzke/zephyr-example-recipes.git \
 	    --recurse-submodules
+    $ cd zephyr-example-recipes
     $ bob dev demo::zephyr -j
 
 This will download the toolchain and compile the Zephyr applications. The final
-image is in
+image can be found in:
 
     dev/dist/demo/zephyr/1/workspace/
 
