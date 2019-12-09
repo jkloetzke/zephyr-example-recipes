@@ -42,19 +42,9 @@ buildScript: |
 
 multiPackage:
     "":
-        root: True
+        inherit: [ "basement::rootrecipe" ]
 
         depends:
-            # define host environment
-            -
-                name: devel::sandbox
-                use: [sandbox]
-                forward: True
-            -
-                name: devel::sandbox-toolchain
-                use: [environment, tools]
-                forward: True
-
             # target toolchain
             -
                 name: devel::cross-toolchain-arm-none-eabi
